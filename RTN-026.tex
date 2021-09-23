@@ -3,6 +3,30 @@
 \input{meta}
 
 % Package imports go here.
+\usepackage{listings}
+\usepackage{color}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{frame=tb,
+  language=SQL,
+  aboveskip=3mm,
+  belowskip=3mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\small\ttfamily},
+  numbers=none,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\color{blue},
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve},
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=3
+}
+
 
 % Local commands go here.
 
@@ -49,6 +73,37 @@ DP0.1 contains the DWF data set from the Vera C. Rubin LSST DESC DR2.  This data
 
 % ADD CONTENT HERE
 % You can also use the \input command to include several content files.
+
+\lstset{language=Python}
+\begin{lstlisting}
+for table in ['forced_photometry', 'object', 'position', 'reference', 'truth_match']:
+   query = """SELECT count(*) FROM dp01_dc2_catalogs.%s""" % (table)
+   print(query)
+   results = service.search(query)
+   df = results.to_table().to_pandas()
+   count = df['count'].iloc[0]
+   print(count)
+   print("")
+\end{lstlisting}
+
+\lstset{language=SQL}
+\begin{lstlisting}
+SELECT count(*) FROM dp01_dc2_catalogs.forced_photometry
+147088445
+
+SELECT count(*) FROM dp01_dc2_catalogs.object
+147088478
+
+SELECT count(*) FROM dp01_dc2_catalogs.position
+147088445
+ 
+SELECT count(*) FROM dp01_dc2_catalogs.reference
+147088445
+
+SELECT count(*) FROM dp01_dc2_catalogs.truth_match
+765823615
+\end{lstlisting}
+
 
 \appendix
 % Include all the relevant bib files.
