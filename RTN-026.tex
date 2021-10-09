@@ -42,7 +42,7 @@
 % \setDocSubtitle{A subtitle}
 
 \author{%
-Douglas Tucker
+Douglas L.\ Tucker
 }
 
 \setDocRef{RTN-026}
@@ -76,6 +76,46 @@ DP0.1 contains the DWF data set from the Vera C. Rubin LSST DESC DR2.  This data
 % ADD CONTENT HERE
 % You can also use the \input command to include several content files.
 
+\section{Introduction} \label{sec:intro}
+
+
+\lstset{language=Python}
+\begin{lstlisting}
+# Import the Rubin TAP service utilities
+from rubin_jupyter_utils.lab.notebook import get_tap_service, retrieve_query, get_catalog
+# Get an instance of the TAP service
+service = get_tap_service()
+assert service is not None
+assert service.baseurl == "https://data.lsst.cloud/api/tap"
+\end{lstlisting}
+
+
+
+\section{Basic Test of the \texttt{dp01\_dc2\_catalalogs} Schema} \label{sec:basic}
+
+\lstset{language=Python}
+\begin{lstlisting}
+%%time
+now0=datetime.now()
+schema_name = 'dp01_dc2_catalogs'
+query = """SELECT table_name FROM TAP_SCHEMA.tables WHERE schema_name=%s""" % ("\'"+schema_name+"\'")
+print(query)
+results = service.search(query)
+df = results.to_table().to_pandas()
+table_full_name_list = df['table_name'].tolist()
+print(table_full_name_list)
+\end{lstlisting}
+
+\lstset{language=Python}
+\begin{lstlisting}
+SELECT table_name FROM TAP_SCHEMA.tables WHERE schema_name='dp01_dc2_catalogs'
+['dp01_dc2_catalogs.forced_photometry', 'dp01_dc2_catalogs.object', 'dp01_dc2_catalogs.position', 'dp01_dc2_catalogs.reference', 'dp01_dc2_catalogs.truth_match']
+CPU times: user 17 ms, sys: 0 ns, total: 17 ms
+Wall time: 60.7 ms
+\end{lstlisting}
+
+
+
 \lstset{language=Python}
 \begin{lstlisting}
 for table in ['forced_photometry', 'object', 'position', 'reference', 'truth_match']:
@@ -107,13 +147,46 @@ SELECT count(*) FROM dp01_dc2_catalogs.truth_match
 \end{lstlisting}
 
 
+\section{More Detailed Tests of Individual Tables in the  \texttt{dp01\_dc2\_catalalogs} Schema} \label{sec:detailed}
+
+A separate Jupyter notebook was created to test the contents of each
+table in the \texttt{dp01\_dc2\_catalalogs} schema.  In each case,
+similar steps were followed:
+\begin{enumerate}
+\item Import a set of standard python modules (\texttt{numpy},
+  \texttt{pandas}, etc.) as well the Rubin TAP service utilities.
+\item Get an instance of the TAP service at
+  \url{https://data.lsst.cloud/api/tap}.
+\item Verify the counts of entries for the table as was done in the
+  general schema tests (Section~\ref{sec:basic}).
+\item Verify the list of tracts as also was done in the general schema
+  tests (Section~\ref{sec:basic}).
+\item Loop over each tract:
+  \begin{enumerate}
+  \item Query for the full contents of the table for that tract (via asynchronous TAP query).
+  \item Load the results of the query in a Pandas data frame.
+  \item For each column in the Pandas data frame:
+    \begin{enumerate}
+    \item Count the total number of entries and the number of entries with a value of \texttt{NaN}.
+    \item Calculate the 1\%-ile, the 50\%-ile (median), and the 99\%-ile value for that column via the Pandas \texttt{Series.quantile} function.
+    \end{enumerate}
+  \end{enumerate}
+\item Once the the above statistics were measured for each column in each tract, the histogram over all the tracts for each column was plotted.
+\item Once all was completed for the table being checked, the asynchronous TAP jobs could be deleted.
+\end{enumerate}
+
+Details of this process can be viewed in the rendered Jupyter notebooks at
+\url{https://github.com/lsst/rtn-026/blob/master/notebooks/}.
+
+
+Note, the process of querying a table for all its entries tract-by-tract and downloading to a Pandas data frame is very resource- and time-intensive.  Typically, the process to analyze a single table would take $\gtrsim$16 hours of wall clock time.  In fact, this was not possible for the larger table, \texttt{forced\_photometry} and a different, more approximate method had to be employed.
+
+
 \lstset{language=Python}
 \begin{lstlisting}
 %%time
 now0=datetime.now()
-
-# `tract` is not a column in forced_photometry;
-#   so we need to be a little tricky...
+# `tract` is not a column in forced_photometry; so we need to be a little tricky...
 query = """SELECT DISTINCT obj.tract 
            FROM %s.object as obj
            JOIN %s as x
@@ -121,17 +194,14 @@ query = """SELECT DISTINCT obj.tract
            ORDER BY obj.tract""" % \
         (schema_name, table_full_name)
 print(query)
-
 results = service.search(query)
-
 df = results.to_table().to_pandas()
 tract_list = df['tract'].tolist()
-
 now1=datetime.now()
 print("Total time:", now1-now0)
-
 print(tract_list)
 \end{lstlisting}
+
 
 %\begin{allintypewriter}
 \lstset{language=sh}
@@ -147,6 +217,59 @@ CPU times: user 12.5 ms, sys: 3.93 ms, total: 16.4 ms
 Wall time: 1min 53s
 \end{lstlisting}
 %\end{allintypewriter}
+
+
+
+\subsection{\texttt{object} Table} \label{sec:object}
+
+\begin{figure*}[h]
+\centering
+\includegraphics[width=1.0\linewidth]{Plots/TAP_verify_DP01.dp01_dc2_catalogs.object.mag_i.png}
+\caption{}
+\label{fig:object_mag_i}
+\end{figure*}
+
+\begin{figure*}[h]
+\centering
+\includegraphics[width=1.0\linewidth]{Plots/TAP_verify_DP01.dp01_dc2_catalogs.object.magerr_i.png}
+\caption{}
+\label{fig:object_mag_i}
+\end{figure*}
+
+\begin{figure*}[h]
+\centering
+\includegraphics[width=1.0\linewidth]{Plots/TAP_verify_DP01.dp01_dc2_catalogs.object.psf_fwhm_i.png}
+\caption{}
+\label{fig:object_mag_i}
+\end{figure*}
+
+
+
+%TAP_verify_DP01.dp01_dc2_catalogs.object.mag_i.png
+%TAP_verify_DP01.dp01_dc2_catalogs.object.magerr_i.png
+%TAP_verify_DP01.dp01_dc2_catalogs.object.psf_fwhm_i.png
+
+
+\subsection{\texttt{position} Table} \label{sec:position}
+
+
+
+\subsection{\texttt{reference} Table} \label{sec:reference}
+
+
+
+\subsection{\texttt{truth\_match} Table} \label{sec:truth_match}
+
+
+
+\subsection{\texttt{forced\_photometry} Table} \label{sec:forced_photometry}
+
+
+
+\section{Conclusions} \label{sec:conclusions}
+
+
+
 
 \appendix
 % Include all the relevant bib files.
