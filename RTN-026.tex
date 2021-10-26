@@ -36,7 +36,7 @@
 %\input{aglossary.tex}
 %\makeglossaries
 
-\title{Verification Tests of the DP0.1 TAPserver on IDF}
+\title{Validation Tests of the DP0.1 TAPserver on IDF}
 
 % Optional subtitle
 % \setDocSubtitle{A subtitle}
@@ -54,7 +54,11 @@ Douglas L.\ Tucker
 % \setDocCurator{The Curator of this Document}
 
 \setDocAbstract{%
-DP0.1 contains the DWF data set from the Vera C. Rubin LSST DESC DR2.  This data set contains, among other material, images and catalogs for c. 300 sq deg of contiguous sky within the LSST footprint.  Here, we present verfication tests of the catalog data contained within the DP0.1 TAPserver on the Interim Data Facility (IDF).
+DP0.1 contains the DWF data set from the Vera C. Rubin LSST DESC DR2.
+This data set contains, among other material, images and catalogs for
+c.\ 300 sq deg of contiguous sky within the LSST footprint.  Here, we
+present verfication tests of the catalog data contained within the
+DP0.1 TAPserver on the Interim Data Facility (IDF).
 }
 
 % Change history defined here.
@@ -78,6 +82,33 @@ DP0.1 contains the DWF data set from the Vera C. Rubin LSST DESC DR2.  This data
 
 \section{Introduction} \label{sec:intro}
 
+This Rubin Technical Note (RTN-026) documents the validation of the
+TAP service (Qserv) database on the Interim Data Facility (IDF) for
+DP0.1.  DP0.1 contains the DWF data set from the Vera C.\ Rubin LSST
+DESC Data Challege 2 (DC2).
+%; \citep{2021ApJS..253...31L,2021arXiv210104855L}).
+This data set contains, among other material, images and catalogs for
+c.\ 300 sq deg of contiguous sky within the LSST footprint.  DP0.1 was
+released to the
+
+Here, we present verfication tests of the catalog data
+contained within the DP0.1 TAPserver on the Interim Data Facility
+(IDF).
+
+DP0 is described in \citeds{RTN-001}.
+
+DP0.1 was fully uploaded to the IDF by the end of March 2021.  It became
+available to the the initial group of DP0 Delegates at the end of June 2021.
+
+Initial DP0.2 re-processing of two tracts to a 1.5-year depth became
+available for testing in the second half of October 2021.
+
+Here, we generally used the TAP service to access Qserv via the Jupyter
+notebooks running on the Rubin Science Platform (RSP) on the IDF,
+although we occaionally used the NVO TOPCAT java software for initial
+tests.  Access via the Jupyter notebook interface was achieved via the
+following code:
+
 
 \lstset{language=Python}
 \begin{lstlisting}
@@ -91,7 +122,10 @@ assert service.baseurl == "https://data.lsst.cloud/api/tap"
 
 
 
-\section{Basic Test of the \texttt{dp01\_dc2\_catalalogs} Schema} \label{sec:basic}
+\section{Basic Tests of the \texttt{dp01\_dc2\_catalalogs} Schema} \label{sec:basic}
+
+As a first basic test of the DP0.1 contents of Qserv, we looked at which tables were available in the
+\texttt{dp01\_dc2\_catalogs} schema:
 
 \lstset{language=Python}
 \begin{lstlisting}
@@ -106,14 +140,18 @@ table_full_name_list = df['table_name'].tolist()
 print(table_full_name_list)
 \end{lstlisting}
 
+Here are the results, which match expectations:
+
 \lstset{language=Python}
 \begin{lstlisting}
 SELECT table_name FROM TAP_SCHEMA.tables WHERE schema_name='dp01_dc2_catalogs'
 ['dp01_dc2_catalogs.forced_photometry', 'dp01_dc2_catalogs.object', 'dp01_dc2_catalogs.position', 'dp01_dc2_catalogs.reference', 'dp01_dc2_catalogs.truth_match']
 CPU times: user 17 ms, sys: 0 ns, total: 17 ms
-Wall time: 60.7 ms
+yWall time: 60.7 ms
 \end{lstlisting}
 
+
+Once we we checked that the above tables were, in fact, in the IDF Qserv database, our next simple test was to check how many entries (rows) there were in these 5 tables: 
 
 
 \lstset{language=Python}
@@ -127,6 +165,8 @@ for table in ['forced_photometry', 'object', 'position', 'reference', 'truth_mat
    print(count)
    print("")
 \end{lstlisting}
+
+These are the results.
 
 \lstset{language=SQL}
 \begin{lstlisting}
@@ -146,6 +186,7 @@ SELECT count(*) FROM dp01_dc2_catalogs.truth_match
 765823615
 \end{lstlisting}
 
+As expected, the \texttt{forced\_photometry}, \texttt{object}, \texttt{}, and \texttt{reference} tables have a (nearly) identical number of rows, since each of these tables refers to individual objects that are the same for all four of these tables.  (It has been noted that the \texttt{object} table contains 33 more rows than the other three of these 4 tables, but why this is so has yet to be fully investigated.)  The \texttt{truth\_match} has $\approx$5$\times$ as many entries as the other four catalogs.  A quick check indicates that  \texttt{truth\_match} contains a considerable number of objects with no match in (say) the \texttt{object} table, and the peak of \texttt{r\_mag} for entries in the \texttt{truth\_match} is $\sim$29.0 instead of $\sim$26.0 as it is for the texttt{object} table.
 
 \section{More Detailed Tests of Individual Tables in the  \texttt{dp01\_dc2\_catalalogs} Schema} \label{sec:detailed}
 
